@@ -374,9 +374,9 @@ body {
   .conversion p {
     max-width: 430px;
     margin-bottom: 28px;
-    font-size: clamp(18px, 4.6vw, 21px);
+    font-size: clamp(16px, 4.1vw, 19px);
     letter-spacing: -0.55px;
-    line-height: 1.48;
+    line-height: 1.62;
   }
 
   .button {
