@@ -235,7 +235,7 @@ body {
   font-size: clamp(17px, 2vw, 20px);
   font-weight: 500;
   letter-spacing: -0.55px;
-  line-height: 1.22;
+  line-height: 1.58;
 }
 
 .conversion strong {
