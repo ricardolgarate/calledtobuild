@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Favicon Upload | Called To Build</title>
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="stylesheet" href="./upload.css" />
+  </head>
+  <body>
+    <main class="upload-page">
+      <section class="upload-card">
+        <p class="upload-card__eyebrow">Public Assets</p>
+        <h1>Upload Your Logo</h1>
+        <p class="upload-card__lead">
+          Drop your logo here to set the site favicon. Supported formats: PNG, JPG, WEBP, SVG, and ICO.
+        </p>
+
+        <form class="upload-form" id="upload-form">
+          <label class="dropzone" id="dropzone" for="logo-input">
+            <input id="logo-input" name="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,.ico" />
+            <span class="dropzone__icon" aria-hidden="true">+</span>
+            <span class="dropzone__title">Drag and drop your logo</span>
+            <span class="dropzone__hint">or click to browse</span>
+          </label>
+
+          <div class="preview" id="preview" hidden>
+            <p class="preview__label">Preview</p>
+            <img id="preview-image" alt="Logo preview" />
+          </div>
+
+          <button class="upload-button" type="submit" id="upload-button" disabled>Set As Favicon</button>
+        </form>
+
+        <p class="upload-status" id="upload-status" role="status" aria-live="polite"></p>
+
+        <a class="back-link" href="../index.html">Back to landing page</a>
+      </section>
+    </main>
+    <script src="./upload.js"></script>
+  </body>
+</html>
