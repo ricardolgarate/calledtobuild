@@ -660,9 +660,9 @@ body.is-sidebar-collapsed .sidebar-toggle--floating {
 
 .queue-card {
   display: grid;
-  grid-template-columns: minmax(190px, 1fr) 140px 130px 120px minmax(180px, 1fr);
-  gap: 14px;
-  align-items: center;
+  grid-template-columns: minmax(180px, 0.85fr) minmax(220px, 1fr) minmax(132px, auto) minmax(240px, 1.1fr);
+  gap: 16px;
+  align-items: stretch;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -687,8 +687,95 @@ body.is-sidebar-collapsed .sidebar-toggle--floating {
   font-size: 13px;
 }
 
+.queue-card__lead,
+.queue-card__status,
+.queue-card__meta,
+.queue-card__notes-panel {
+  display: grid;
+  align-content: start;
+}
+
+.queue-card__status,
+.queue-card__notes-panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  padding: 12px;
+}
+
+.queue-card__meta {
+  gap: 8px;
+  justify-items: start;
+}
+
+.followup-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.followup-check input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.followup-details {
+  display: grid;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.followup-details label {
+  display: grid;
+  gap: 6px;
+  color: var(--soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.followup-details input {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  padding: 0 10px;
+}
+
+.followup-details input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.followup-details button {
+  min-height: 38px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.followup-details button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .queue-card__notes-label {
-  margin-top: 10px !important;
+  margin-bottom: 7px !important;
   color: var(--soft) !important;
   font-size: 11px !important;
   font-weight: 700;
@@ -699,10 +786,9 @@ body.is-sidebar-collapsed .sidebar-toggle--floating {
 .queue-card__notes {
   width: 100%;
   min-height: 76px;
-  margin-top: 3px !important;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--surface-muted);
+  background: var(--surface);
   color: var(--text);
   outline: none;
   padding: 9px 10px;

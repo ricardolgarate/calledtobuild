@@ -404,15 +404,32 @@ function renderFollowups() {
       const score = scoreLead(lead);
       return `
         <article class="queue-card" data-lead-id="${lead.id}">
-          <div>
+          <div class="queue-card__lead">
             <h3>${escapeHtml(lead.name || "Unnamed Lead")}</h3>
-            <p class="queue-card__notes-label">Notes</p>
-            <textarea class="queue-card__notes" data-field="notes" rows="3">${escapeHtml(lead.notes || "")}</textarea>
+            <p>${escapeHtml(lead.owner || "Unassigned")}</p>
           </div>
-          <span class="stage-pill">${escapeHtml(lead.stage || "")}</span>
-          <span>${escapeHtml(lead.owner || "Unassigned")}</span>
-          <span class="score-pill ${score.color}">${score.label}</span>
-          <span class="date-pill ${isPastDue(lead) ? "overdue" : ""}">${formatDate(lead.nextFollowUpDate)}</span>
+          <div class="queue-card__status">
+            <label class="followup-check">
+              <input type="checkbox" data-followup-confirm />
+              <span>Have you followed up yet?</span>
+            </label>
+            <div class="followup-details" data-followup-details hidden>
+              <label>
+                When?
+                <input type="date" data-followup-date value="${todayISO()}" />
+              </label>
+              <button type="button" data-complete-followup>Update Lead Tracker</button>
+            </div>
+          </div>
+          <div class="queue-card__meta">
+            <span class="stage-pill">${escapeHtml(lead.stage || "")}</span>
+            <span class="score-pill ${score.color}">${score.label}</span>
+            <span class="date-pill ${isPastDue(lead) ? "overdue" : ""}">${formatDate(lead.nextFollowUpDate)}</span>
+          </div>
+          <div class="queue-card__notes-panel">
+            <p class="queue-card__notes-label">Notes</p>
+            <textarea class="queue-card__notes" data-field="notes" rows="4">${escapeHtml(lead.notes || "")}</textarea>
+          </div>
         </article>
       `;
     })
@@ -555,6 +572,19 @@ async function saveField(leadId, field, value) {
 
   await updateDoc(doc(leadsCollection, leadId), {
     [field]: value,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+async function completeFollowUp(leadId, followupDate) {
+  if (!followupDate) {
+    window.alert("Choose when you followed up before updating the lead.");
+    return;
+  }
+
+  await updateDoc(doc(leadsCollection, leadId), {
+    lastTouch: followupDate,
+    nextFollowUpDate: "",
     updatedAt: serverTimestamp(),
   });
 }
@@ -879,6 +909,38 @@ function setLoadingMessage(text, showLogin = false) {
   if (loadingLogin) loadingLogin.hidden = !showLogin;
 }
 
+function redirectToLogin() {
+  setLoadingMessage("Redirecting to login...", true);
+  window.location.replace("/login");
+}
+
+let authReady = false;
+let appBootstrapped = false;
+
+function bootstrapApp(user) {
+  if (appBootstrapped) return;
+  appBootstrapped = true;
+
+  fillDialogOptions();
+  initEvents();
+  setView("dashboard");
+  userEmail.textContent = user.email || user.displayName || "Signed in";
+  appShell.hidden = false;
+  loadingScreen.hidden = true;
+  initLeads(user);
+}
+
+function handleAuthUser(user) {
+  authReady = true;
+
+  if (!user) {
+    redirectToLogin();
+    return;
+  }
+
+  bootstrapApp(user);
+}
+
 function initEvents() {
   document.querySelectorAll("[data-view-button]").forEach((button) => {
     button.addEventListener("click", () => setView(button.dataset.viewButton));
@@ -970,10 +1032,35 @@ function initEvents() {
   });
 
   followupList.addEventListener("change", async (event) => {
+    const followupConfirm = event.target.closest("[data-followup-confirm]");
+    if (followupConfirm) {
+      const card = followupConfirm.closest("[data-lead-id]");
+      const details = card?.querySelector("[data-followup-details]");
+      if (details) details.hidden = !followupConfirm.checked;
+      if (followupConfirm.checked) details?.querySelector("[data-followup-date]")?.focus();
+      return;
+    }
+
     const field = event.target.dataset.field;
     const card = event.target.closest("[data-lead-id]");
     if (!field || !card) return;
     await saveField(card.dataset.leadId, field, event.target.value);
+  });
+
+  followupList.addEventListener("click", async (event) => {
+    const completeButton = event.target.closest("[data-complete-followup]");
+    if (!completeButton) return;
+
+    const card = completeButton.closest("[data-lead-id]");
+    const followupDate = card?.querySelector("[data-followup-date]")?.value;
+    if (!card) return;
+    completeButton.disabled = true;
+
+    try {
+      await completeFollowUp(card.dataset.leadId, followupDate);
+    } finally {
+      completeButton.disabled = false;
+    }
   });
 
   searchInput.addEventListener("input", () => {
@@ -1003,28 +1090,12 @@ function initLeads(user) {
   });
 }
 
-fillDialogOptions();
-initEvents();
-setView("dashboard");
-
-onAuthStateChanged(auth, (user) => {
-  if (!user) {
-    setLoadingMessage("Redirecting to login...", true);
-    window.location.href = "/login";
-    return;
-  }
-
-  userEmail.textContent = user.email || user.displayName || "Signed in";
-  appShell.hidden = false;
-  loadingScreen.hidden = true;
-  initLeads(user);
-}, (error) => {
+onAuthStateChanged(auth, handleAuthUser, (error) => {
   console.error(error);
-  setLoadingMessage("We couldn't load the CRM. Please log in again.", true);
+  redirectToLogin();
 });
 
 window.setTimeout(() => {
-  if (!loadingScreen.hidden) {
-    setLoadingMessage("Still loading. If this stays here, log in again.", true);
-  }
-}, 5000);
+  if (authReady || auth.currentUser) return;
+  redirectToLogin();
+}, 2000);
