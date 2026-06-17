@@ -1,7 +1,9 @@
 :root {
-  --purple: #7600ff;
-  --purple-dark: #5200d5;
-  --navy: #20213d;
+  --blue: #2563eb;
+  --blue-hover: #1d4ed8;
+  --blue-dark: #1e40af;
+  --highlight: #fff200;
+  --navy: #1e293b;
   --black: #000000;
   --white: #ffffff;
   --muted: rgba(255, 255, 255, 0.72);
@@ -12,20 +14,95 @@
 }
 
 body {
-  min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   font-family: "Montserrat", Arial, sans-serif;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(118, 0, 255, 0.24), transparent 36%),
-    linear-gradient(180deg, var(--black) 0 72px, var(--navy) 72px 100%);
+  background: var(--navy);
   color: var(--white);
+}
+
+.site-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 19;
+  display: flex;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  background: var(--black);
+}
+
+.eyebrow {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 25px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 13px 6px;
+  border-radius: 5px;
+  background: var(--white);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2);
+  color: #121212;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1.25px;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.eyebrow__dot {
+  display: inline-block;
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #e52222;
+}
+
+.eyebrow__dot::after {
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  background: rgba(229, 34, 34, 0.34);
+  content: "";
+  opacity: 0;
+  animation: livePulse 1.35s ease-out infinite;
+}
+
+@keyframes livePulse {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.35);
+  }
+
+  70% {
+    opacity: 0;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eyebrow__dot::after {
+    animation: none;
+  }
 }
 
 .auth-page {
   display: grid;
-  min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
-  padding: 48px 20px;
+  padding: 72px 20px 48px;
 }
 
 .auth-card {
@@ -58,7 +135,7 @@ body {
 
 .auth-eyebrow {
   margin: 32px 0 10px;
-  color: #fff200;
+  color: var(--highlight);
   font-size: 11px;
   font-weight: 900;
   letter-spacing: 1.4px;
@@ -116,8 +193,8 @@ body {
   min-height: 58px;
   border: 0;
   border-radius: 14px;
-  background: linear-gradient(90deg, var(--purple), #8b00ff);
-  box-shadow: 0 18px 32px rgba(118, 0, 255, 0.26);
+  background: linear-gradient(90deg, var(--blue), #3b82f6);
+  box-shadow: 0 18px 32px rgba(37, 99, 235, 0.26);
   color: var(--white);
   cursor: pointer;
   font: inherit;
@@ -128,7 +205,7 @@ body {
 
 .auth-form button:hover,
 .auth-form button:focus-visible {
-  background: linear-gradient(90deg, var(--purple-dark), #7400e7);
+  background: linear-gradient(90deg, var(--blue-hover), var(--blue));
 }
 
 .auth-message {
@@ -153,4 +230,30 @@ body {
 .auth-switch a {
   color: var(--white);
   font-weight: 900;
+}
+
+@media (max-width: 700px) {
+  .site-header {
+    height: 76px;
+  }
+
+  .auth-page {
+    padding: 96px 20px 40px;
+  }
+
+  .eyebrow {
+    width: min(100%, 352px);
+    min-height: 0;
+    padding: 10px 16px 9px;
+    border-radius: 7px;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    line-height: 1.22;
+    white-space: normal;
+  }
+
+  .eyebrow__dot {
+    width: 10px;
+    height: 10px;
+  }
 }

@@ -24,7 +24,7 @@ function setMessage(text, success = false) {
 }
 
 function redirectToDashboard() {
-  window.location.href = "./crmdashboard.html";
+  window.location.href = "/crmdashboard";
 }
 
 onAuthStateChanged(auth, (user) => {

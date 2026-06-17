@@ -912,7 +912,7 @@ function initEvents() {
 
   logoutButton.addEventListener("click", async () => {
     await signOut(auth);
-    window.location.href = "./login.html";
+    window.location.href = "/login";
   });
 
   addLeadButton.addEventListener("click", () => leadDialog.showModal());
@@ -1010,7 +1010,7 @@ setView("dashboard");
 onAuthStateChanged(auth, (user) => {
   if (!user) {
     setLoadingMessage("Redirecting to login...", true);
-    window.location.href = "./login.html";
+    window.location.href = "/login";
     return;
   }
 
