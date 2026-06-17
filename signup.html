@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up | Called To Build CRM</title>
+    <link rel="icon" href="./public/favicon.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/auth.css" />
+  </head>
+  <body>
+    <main class="auth-page">
+      <section class="auth-card">
+        <a class="auth-logo" href="./" aria-label="Called To Build home">
+          <img src="./public/favicon.png" alt="" />
+          <span>Called To Build</span>
+        </a>
+        <p class="auth-eyebrow">Private CRM</p>
+        <h1>Create Account</h1>
+        <p class="auth-lead">Sign up to unlock the lead tracker, follow-up queue, and dashboard.</p>
+
+        <form class="auth-form" data-auth-form="signup">
+          <label>
+            Full name
+            <input name="name" type="text" autocomplete="name" required />
+          </label>
+          <label>
+            Email
+            <input name="email" type="email" autocomplete="email" required />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autocomplete="new-password" minlength="6" required />
+          </label>
+          <button type="submit">Create Account</button>
+          <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
+        </form>
+
+        <p class="auth-switch">
+          Already have an account?
+          <a href="./login.html">Log in</a>
+        </p>
+      </section>
+    </main>
+    <script type="module" src="./src/auth-pages.js"></script>
+  </body>
+</html>

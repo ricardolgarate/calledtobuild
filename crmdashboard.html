@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CRM Dashboard | Called To Build</title>
+    <link rel="icon" href="./public/favicon.png" type="image/png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/crm.css" />
+  </head>
+  <body>
+    <main class="crm-shell" data-crm-app hidden>
+      <aside class="crm-sidebar" data-sidebar>
+        <div class="crm-sidebar__header">
+          <a class="crm-brand" href="./">
+            <img src="./public/favicon.png" alt="" />
+            <span>Called To Build</span>
+          </a>
+          <button class="sidebar-toggle sidebar-toggle--inline" type="button" data-menu-toggle aria-label="Collapse sidebar">
+            <span class="sidebar-toggle__icon" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+          <button class="sidebar-close" type="button" data-sidebar-close aria-label="Close menu">x</button>
+        </div>
+        <nav class="crm-nav" aria-label="CRM views">
+          <button class="crm-nav__button" type="button" data-view-button="tracker">
+            Lead Tracker
+          </button>
+          <button class="crm-nav__button" type="button" data-view-button="followups">
+            Follow Up Queue
+          </button>
+          <button class="crm-nav__button is-active" type="button" data-view-button="dashboard">
+            Dashboard
+          </button>
+        </nav>
+        <div class="crm-user">
+          <p data-user-email>Loading...</p>
+          <button type="button" data-open-settings>Settings</button>
+          <button type="button" data-logout>Log Out</button>
+        </div>
+      </aside>
+
+      <button class="sidebar-toggle sidebar-toggle--floating" type="button" data-menu-toggle aria-label="Open sidebar">
+        <span class="sidebar-toggle__icon" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </span>
+      </button>
+
+      <section class="crm-main">
+        <header class="crm-topbar">
+          <button class="primary-action" type="button" data-add-lead>Add Lead</button>
+        </header>
+
+        <section class="crm-view" data-view="tracker">
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <h2>Lead Tracker</h2>
+                <p>A focused operating table for lead details, scoring, follow-up dates, and stage history.</p>
+              </div>
+              <input class="search-input" type="search" placeholder="Search leads..." data-search />
+            </div>
+            <div class="table-wrap">
+              <table class="crm-table">
+                <thead>
+                  <tr>
+                    <th>Lead</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Source</th>
+                    <th>Stage</th>
+                    <th>Owner</th>
+                    <th>Pain</th>
+                    <th>Space</th>
+                    <th>Deadline</th>
+                    <th>Decision</th>
+                    <th>Budget</th>
+                    <th>City</th>
+                    <th>Score</th>
+                    <th>Last Touch</th>
+                    <th>Follow Up</th>
+                    <th>Lost Reason</th>
+                    <th>Notes</th>
+                    <th>Attachment</th>
+                  </tr>
+                </thead>
+                <tbody data-lead-rows>
+                  <tr>
+                    <td colspan="18">Loading leads...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="crm-view" data-view="followups">
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <h2>Follow Up Queue</h2>
+                <p>Date-driven queue sorted by the next follow-up date. Past-due dates are red.</p>
+              </div>
+            </div>
+            <div class="queue-list" data-followup-list></div>
+          </div>
+        </section>
+
+        <section class="crm-view is-active" data-view="dashboard">
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <h2>Dashboard</h2>
+              </div>
+              <select class="range-select" data-dashboard-range>
+                <option value="week">This Week</option>
+                <option value="month" selected>This Month</option>
+                <option value="year">This Year</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+            <div class="metric-grid" data-metrics></div>
+            <div class="dashboard-grid">
+              <section class="mini-panel">
+                <h3>Stage Breakdown</h3>
+                <div data-stage-breakdown></div>
+              </section>
+              <section class="mini-panel">
+                <h3>Source Breakdown</h3>
+                <div data-source-breakdown></div>
+              </section>
+              <section class="mini-panel">
+                <h3>Recent Stage Events</h3>
+                <div data-stage-events></div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <div class="sidebar-overlay" data-sidebar-overlay></div>
+
+    <div class="loading-screen" data-loading-screen>
+      <div>
+        <img src="./public/favicon.png" alt="" />
+        <p>Loading CRM...</p>
+        <a href="./login.html" data-loading-login hidden>Go to login</a>
+      </div>
+    </div>
+
+    <dialog class="lead-dialog" data-lead-dialog>
+      <form method="dialog" class="lead-form" data-lead-form>
+        <div class="lead-form__header">
+          <div>
+            <p class="crm-eyebrow">New Lead</p>
+            <h2>Add Lead</h2>
+          </div>
+          <button type="button" data-close-dialog aria-label="Close">x</button>
+        </div>
+        <div class="lead-form__grid">
+          <label>Lead Name<input name="name" required /></label>
+          <label>Phone<input name="phone" /></label>
+          <label>Email<input name="email" type="email" /></label>
+          <label>Source<select name="source" data-options="sources"></select></label>
+          <label>Stage<select name="stage" data-options="stages"></select></label>
+          <label>Owner<select name="owner" data-options="owners"></select></label>
+          <label>Pain<select name="pain" data-options="pains"></select></label>
+          <label>Space Needed<select name="spaceNeeded" data-options="spaces"></select></label>
+          <label>Their Deadline<input name="deadline" type="date" /></label>
+          <label>Decision Maker<select name="decisionMaker" data-options="decisionMakers"></select></label>
+          <label>Budget<select name="budget" data-options="budgets"></select></label>
+          <label>City<select name="city" data-options="cities"></select></label>
+          <label>Last Touch<input name="lastTouch" type="date" /></label>
+          <label>Next Follow-Up<input name="nextFollowUpDate" type="date" /></label>
+          <label>Lost Reason<select name="lostReason" data-options="lostReasons"></select></label>
+          <label>Attachment<input name="attachment" type="file" /></label>
+          <label class="lead-form__wide">Notes<textarea name="notes" rows="3"></textarea></label>
+        </div>
+        <div class="lead-form__footer">
+          <button type="button" class="ghost-action" data-close-dialog>Cancel</button>
+          <button type="submit" class="primary-action">Save Lead</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="lead-dialog settings-dialog" data-password-dialog>
+      <form class="lead-form settings-form" data-password-form>
+        <div class="lead-form__header">
+          <div>
+            <p class="crm-eyebrow">Settings</p>
+            <h2>Change Password</h2>
+          </div>
+          <button type="button" data-close-password-dialog aria-label="Close">x</button>
+        </div>
+        <p class="settings-form__hint">For your security, enter your current password before choosing a new one.</p>
+        <div class="lead-form__grid">
+          <label class="lead-form__wide">Current Password<input name="currentPassword" type="password" autocomplete="current-password" required /></label>
+          <label>New Password<input name="newPassword" type="password" autocomplete="new-password" minlength="6" required /></label>
+          <label>Confirm New Password<input name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required /></label>
+        </div>
+        <p class="settings-form__status" data-password-status role="status" aria-live="polite"></p>
+        <div class="lead-form__footer">
+          <button type="button" class="ghost-action ghost-action--light" data-close-password-dialog>Cancel</button>
+          <button type="submit" class="primary-action">Update Password</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script type="module" src="./src/crm.js"></script>
+  </body>
+</html>

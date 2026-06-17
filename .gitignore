@@ -1,3 +1,8 @@
 .DS_Store
 __pycache__/
 *.pyc
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local

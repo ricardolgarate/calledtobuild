@@ -1,7 +1,9 @@
 :root {
-  --purple: #7000ff;
-  --purple-light: #fff200;
-  --navy: #20213d;
+  --blue: #2563eb;
+  --blue-hover: #1d4ed8;
+  --blue-dark: #1e40af;
+  --highlight: #fff200;
+  --navy: #1e293b;
   --black: #000000;
   --white: #ffffff;
 }
@@ -30,10 +32,9 @@ body {
   left: 0;
   display: flex;
   z-index: 19;
-  height: 58px;
-  align-items: flex-start;
+  height: 44px;
+  align-items: center;
   justify-content: center;
-  padding-top: 14px;
   background: var(--black);
 }
 
@@ -47,7 +48,7 @@ body {
   display: flex;
   justify-content: center;
   min-height: 514px;
-  padding: 142px 24px 0;
+  padding: 126px 24px 0;
   background: var(--navy);
 }
 
@@ -145,7 +146,7 @@ body {
 }
 
 .hero__title strong {
-  color: var(--purple-light);
+  color: var(--highlight);
   font-weight: 900;
 }
 
@@ -250,8 +251,8 @@ body {
   align-items: center;
   justify-content: center;
   border-radius: 5px;
-  background: linear-gradient(90deg, #7600ff, #7900f5);
-  box-shadow: 0 12px 24px rgba(112, 0, 255, 0.22);
+  background: linear-gradient(90deg, var(--blue), #3b82f6);
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
   color: var(--white);
   font-size: 19px;
   font-weight: 850;
@@ -262,11 +263,11 @@ body {
 
 .button:hover,
 .button:focus-visible {
-  background: linear-gradient(90deg, #5500e8, #6900dd);
+  background: linear-gradient(90deg, var(--blue-hover), var(--blue));
 }
 
 .button:focus-visible {
-  outline: 3px solid rgba(107, 0, 255, 0.35);
+  outline: 3px solid rgba(37, 99, 235, 0.35);
   outline-offset: 3px;
 }
 
@@ -285,13 +286,12 @@ body {
   }
 
   .site-header {
-    height: 118px;
-    padding-top: 24px;
+    height: 76px;
   }
 
   .hero {
     min-height: auto;
-    padding: 162px 20px 0;
+    padding: 116px 20px 0;
     background: var(--navy);
   }
 
@@ -330,7 +330,7 @@ body {
   .hero__subtitle {
     max-width: 440px;
     margin: 27px 0 30px;
-    font-size: clamp(19px, 4.75vw, 23px);
+    font-size: clamp(20px, 5vw, 24px);
     letter-spacing: -0.45px;
     line-height: 1.3;
   }
