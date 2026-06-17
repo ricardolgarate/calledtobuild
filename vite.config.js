@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
+        notFound: resolve(__dirname, "404.html"),
         login: resolve(__dirname, "login.html"),
         signup: resolve(__dirname, "signup.html"),
         crmdashboard: resolve(__dirname, "crmdashboard.html"),
