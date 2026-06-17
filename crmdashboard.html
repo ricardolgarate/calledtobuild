@@ -56,7 +56,12 @@
 
       <section class="crm-main">
         <header class="crm-topbar">
-          <button class="primary-action" type="button" data-add-lead>Add Lead</button>
+          <p class="import-status" data-import-status role="status" aria-live="polite"></p>
+          <div class="topbar-actions">
+            <button class="secondary-action" type="button" data-import-leads>Import Spreadsheet</button>
+            <input data-import-file type="file" accept=".xlsx,.xls,.csv" hidden />
+            <button class="primary-action" type="button" data-add-lead>Add Lead</button>
+          </div>
         </header>
 
         <section class="crm-view" data-view="tracker">
@@ -66,7 +71,14 @@
                 <h2>Lead Tracker</h2>
                 <p>A focused operating table for lead details, scoring, follow-up dates, and stage history.</p>
               </div>
-              <input class="search-input" type="search" placeholder="Search leads..." data-search />
+              <div class="tracker-controls">
+                <select class="range-select" data-lead-sort aria-label="Sort leads">
+                  <option value="alphabetical">Alphabetical</option>
+                  <option value="recently-added">Recently Added</option>
+                  <option value="recently-edited">Recently Edited</option>
+                </select>
+                <input class="search-input" type="search" placeholder="Search leads..." data-search />
+              </div>
             </div>
             <div class="table-wrap">
               <table class="crm-table">
@@ -90,11 +102,12 @@
                     <th>Lost Reason</th>
                     <th>Notes</th>
                     <th>Attachment</th>
+                    <th>Delete</th>
                   </tr>
                 </thead>
                 <tbody data-lead-rows>
                   <tr>
-                    <td colspan="18">Loading leads...</td>
+                    <td colspan="19">Loading leads...</td>
                   </tr>
                 </tbody>
               </table>

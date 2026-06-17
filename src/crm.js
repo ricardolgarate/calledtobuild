@@ -2,12 +2,14 @@ import { EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, si
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import readXlsxFile from "read-excel-file/browser";
 import { auth, db, storage } from "./firebase.js";
 import {
   authorityTriggers,
@@ -28,12 +30,16 @@ const settingsButton = document.querySelector("[data-open-settings]");
 const leadRows = document.querySelector("[data-lead-rows]");
 const followupList = document.querySelector("[data-followup-list]");
 const addLeadButton = document.querySelector("[data-add-lead]");
+const importLeadsButton = document.querySelector("[data-import-leads]");
+const importFileInput = document.querySelector("[data-import-file]");
+const importStatus = document.querySelector("[data-import-status]");
 const leadDialog = document.querySelector("[data-lead-dialog]");
 const leadForm = document.querySelector("[data-lead-form]");
 const passwordDialog = document.querySelector("[data-password-dialog]");
 const passwordForm = document.querySelector("[data-password-form]");
 const passwordStatus = document.querySelector("[data-password-status]");
 const searchInput = document.querySelector("[data-search]");
+const leadSortSelect = document.querySelector("[data-lead-sort]");
 const dashboardRange = document.querySelector("[data-dashboard-range]");
 const metricsNode = document.querySelector("[data-metrics]");
 const stageBreakdownNode = document.querySelector("[data-stage-breakdown]");
@@ -49,6 +55,7 @@ let leads = [];
 let leadsCollection = null;
 let unsubscribeLeads = null;
 let searchTerm = "";
+let leadSortMode = "alphabetical";
 
 const fieldOptions = {
   source: "sources",
@@ -85,6 +92,62 @@ const fieldLabels = {
   attachment: "Attachment",
 };
 
+const inferredStagePaths = {
+  "Not Contacted Yet": ["Not Contacted Yet"],
+  "Contacted / Replied": ["Contacted / Replied"],
+  Qualified: ["Contacted / Replied", "Qualified"],
+  "Asked for Pictures": ["Contacted / Replied", "Qualified", "Asked for Pictures"],
+  "Offered Times": ["Contacted / Replied", "Qualified", "Asked for Pictures", "Offered Times"],
+  "Booked Consult": ["Contacted / Replied", "Qualified", "Asked for Pictures", "Offered Times", "Booked Consult"],
+  "Showed to Consult": [
+    "Contacted / Replied",
+    "Qualified",
+    "Asked for Pictures",
+    "Offered Times",
+    "Booked Consult",
+    "Showed to Consult",
+  ],
+  Closed: [
+    "Contacted / Replied",
+    "Qualified",
+    "Asked for Pictures",
+    "Offered Times",
+    "Booked Consult",
+    "Showed to Consult",
+    "Closed",
+  ],
+  "Nurture After Consult": [
+    "Contacted / Replied",
+    "Qualified",
+    "Asked for Pictures",
+    "Offered Times",
+    "Booked Consult",
+    "Showed to Consult",
+    "Nurture After Consult",
+  ],
+  "No for Now": [
+    "Contacted / Replied",
+    "Qualified",
+    "Asked for Pictures",
+    "Offered Times",
+    "Booked Consult",
+    "Showed to Consult",
+    "No for Now",
+  ],
+  "Repeat Customer": [
+    "Contacted / Replied",
+    "Qualified",
+    "Asked for Pictures",
+    "Offered Times",
+    "Booked Consult",
+    "Showed to Consult",
+    "Closed",
+    "Repeat Customer",
+  ],
+  Lost: ["Lost"],
+  Dead: ["Dead"],
+};
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -100,6 +163,11 @@ function formatDate(value) {
   const date = toDate(value);
   if (!date) return "";
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", year: "numeric" }).format(date);
+}
+
+function timestampValue(value) {
+  const date = toDate(value);
+  return date ? date.getTime() : 0;
 }
 
 function isPastDue(lead) {
@@ -233,10 +301,10 @@ function renderTable() {
       const haystack = [lead.name, lead.phone, lead.email, lead.source, lead.stage, lead.owner, lead.city].join(" ").toLowerCase();
       return haystack.includes(searchTerm);
     })
-    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+    .sort(sortLeads);
 
   if (!visibleLeads.length) {
-    leadRows.innerHTML = `<tr><td colspan="18">No leads yet. Add your first lead to start tracking.</td></tr>`;
+    leadRows.innerHTML = `<tr><td colspan="19">No leads yet. Add your first lead to start tracking.</td></tr>`;
     return;
   }
 
@@ -263,10 +331,23 @@ function renderTable() {
           ${renderEditableCell(lead, "lostReason")}
           ${renderEditableCell(lead, "notes")}
           <td data-label="${fieldLabels.attachment}">${renderAttachment(lead)}</td>
+          <td data-label="Delete"><button class="delete-lead-button" type="button" data-delete-lead>Delete</button></td>
         </tr>
       `;
     })
     .join("");
+}
+
+function sortLeads(a, b) {
+  if (leadSortMode === "recently-added") {
+    return timestampValue(b.createdAt) - timestampValue(a.createdAt) || String(a.name || "").localeCompare(String(b.name || ""));
+  }
+
+  if (leadSortMode === "recently-edited") {
+    return timestampValue(b.updatedAt) - timestampValue(a.updatedAt) || String(a.name || "").localeCompare(String(b.name || ""));
+  }
+
+  return String(a.name || "").localeCompare(String(b.name || ""));
 }
 
 function renderEditableCell(lead, field) {
@@ -293,8 +374,19 @@ function renderEditableCellInner(lead, field) {
 }
 
 function renderAttachment(lead) {
-  if (!lead.attachmentUrl) return `<span class="empty-state">No file</span>`;
-  return `<a class="attachment-link" href="${escapeHtml(lead.attachmentUrl)}" target="_blank" rel="noreferrer">${escapeHtml(lead.attachmentName || "View file")}</a>`;
+  const link = lead.attachmentUrl
+    ? `<a class="attachment-link" href="${escapeHtml(lead.attachmentUrl)}" target="_blank" rel="noreferrer">${escapeHtml(lead.attachmentName || "View file")}</a>`
+    : `<span class="empty-state">No file</span>`;
+
+  return `
+    <div class="attachment-control">
+      ${link}
+      <label class="attachment-upload">
+        Upload
+        <input data-attachment-upload type="file" />
+      </label>
+    </div>
+  `;
 }
 
 function renderFollowups() {
@@ -311,10 +403,11 @@ function renderFollowups() {
     .map((lead) => {
       const score = scoreLead(lead);
       return `
-        <article class="queue-card">
+        <article class="queue-card" data-lead-id="${lead.id}">
           <div>
             <h3>${escapeHtml(lead.name || "Unnamed Lead")}</h3>
-            <p>${escapeHtml(lead.notes || "No notes yet")}</p>
+            <p class="queue-card__notes-label">Notes</p>
+            <textarea class="queue-card__notes" data-field="notes" rows="3">${escapeHtml(lead.notes || "")}</textarea>
           </div>
           <span class="stage-pill">${escapeHtml(lead.stage || "")}</span>
           <span>${escapeHtml(lead.owner || "Unassigned")}</span>
@@ -327,52 +420,100 @@ function renderFollowups() {
 }
 
 function renderDashboard() {
-  const range = dashboardRange.value;
-  const leadsInRange = leads.filter((lead) => eventDateInRange(lead.createdAt?.toDate?.() || lead.createdAt || todayISO(), range));
-  const stageEvents = leads.flatMap((lead) =>
-    (lead.stageHistory || []).map((event) => ({
-      ...event,
-      leadName: lead.name,
-    })),
-  );
-  const eventsInRange = stageEvents.filter((event) => eventDateInRange(event.date, range));
-  const closeEvents = leads.flatMap(getCountedCloseEvents).filter((event) => eventDateInRange(event.date, range));
-  const closedRevenue = closeEvents.reduce((total, event) => total + Number(event.amount || 0), 0);
-  const dueCount = leads.filter((lead) => isDue(lead) && (isPastDue(lead) || lead.nextFollowUpDate === todayISO())).length;
-  const greenCount = leadsInRange.filter((lead) => scoreLead(lead).color === "green").length;
-  const bookedCount = eventsInRange.filter((event) => event.stage === "Booked Consult").length;
-  const showedCount = eventsInRange.filter((event) => event.stage === "Showed to Consult").length;
+  try {
+    const range = dashboardRange.value;
+    const leadsInRange = leads.filter((lead) => eventDateInRange(lead.createdAt?.toDate?.() || lead.createdAt || todayISO(), range));
+    const stageEvents = leads.flatMap((lead) =>
+      (lead.stageHistory || []).map((event) => ({
+        ...event,
+        leadId: lead.id,
+        leadName: lead.name,
+      })),
+    );
+    const eventsInRange = stageEvents.filter((event) => eventDateInRange(event.date, range));
+    const reachedStageCounts = countDashboardReachedStages(leadsInRange, eventsInRange);
+    const closeEvents = leads.flatMap(getCountedCloseEvents).filter((event) => eventDateInRange(event.date, range));
+    const closedRevenue = closeEvents.reduce((total, event) => total + Number(event.amount || 0), 0);
+    const dueCount = leads.filter((lead) => isDue(lead) && (isPastDue(lead) || lead.nextFollowUpDate === todayISO())).length;
+    const greenCount = leadsInRange.filter((lead) => scoreLead(lead).color === "green").length;
+    const bookedCount = reachedStageCounts["Booked Consult"] || 0;
+    const showedCount = reachedStageCounts["Showed to Consult"] || 0;
 
-  const metrics = [
-    ["Total Leads", leadsInRange.length],
-    ["Green Leads", greenCount],
-    ["Booked Consults", bookedCount],
-    ["Showed", showedCount],
-    ["Counted Closes", closeEvents.length],
-    ["Close Rate", showedCount ? `${Math.round((closeEvents.length / showedCount) * 100)}%` : "0%"],
-    ["Closed Revenue", formatMoney(closedRevenue)],
-    ["AOV", closeEvents.length ? formatMoney(closedRevenue / closeEvents.length) : "$0"],
-    ["Follow-Ups Due", dueCount],
-  ];
+    const metrics = [
+      ["Total Leads", leadsInRange.length],
+      ["Green Leads", greenCount],
+      ["Booked Consults", bookedCount],
+      ["Showed", showedCount],
+      ["Counted Closes", closeEvents.length],
+      ["Close Rate", showedCount ? `${Math.round((closeEvents.length / showedCount) * 100)}%` : "0%"],
+      ["Closed Revenue", formatMoney(closedRevenue)],
+      ["AOV", closeEvents.length ? formatMoney(closedRevenue / closeEvents.length) : "$0"],
+      ["Follow-Ups Due", dueCount],
+    ];
 
-  metricsNode.innerHTML = metrics.map(([label, value]) => `<div class="metric-card"><span>${label}</span><strong>${value}</strong></div>`).join("");
-  stageBreakdownNode.innerHTML = renderBreakdown(countBy(leadsInRange, "stage"));
-  sourceBreakdownNode.innerHTML = renderBreakdown(countBy(leadsInRange, "source"));
-  stageEventsNode.innerHTML = eventsInRange.length
-    ? eventsInRange
-        .slice()
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)))
-        .slice(0, 12)
-        .map(
-          (event) => `
-            <div class="event-row">
-              <span>${escapeHtml(event.leadName || "Lead")}: <strong>${escapeHtml(event.stage)}</strong></span>
-              <span>${formatDate(event.date)}</span>
-            </div>
-          `,
-        )
-        .join("")
-    : `<div class="event-row"><span>No stage events in this range.</span></div>`;
+    metricsNode.innerHTML = metrics.map(([label, value]) => `<div class="metric-card"><span>${label}</span><strong>${value}</strong></div>`).join("");
+    stageBreakdownNode.innerHTML = renderBreakdown(reachedStageCounts, dropdowns.stages);
+    sourceBreakdownNode.innerHTML = renderBreakdown(countBy(leadsInRange, "source"));
+    stageEventsNode.innerHTML = eventsInRange.length
+      ? eventsInRange
+          .slice()
+          .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+          .slice(0, 12)
+          .map(
+            (event) => `
+              <div class="event-row">
+                <span>${escapeHtml(event.leadName || "Lead")}: <strong>${escapeHtml(event.stage || "Unknown")}</strong></span>
+                <span>${formatDate(event.date)}</span>
+              </div>
+            `,
+          )
+          .join("")
+      : `<div class="event-row"><span>No stage events in this range.</span></div>`;
+  } catch (error) {
+    console.error(error);
+    metricsNode.innerHTML = `<div class="metric-card"><span>Dashboard Error</span><strong>Refresh</strong></div>`;
+    stageBreakdownNode.innerHTML = `<div class="breakdown-row"><span>Dashboard data could not load.</span></div>`;
+    sourceBreakdownNode.innerHTML = `<div class="breakdown-row"><span>Dashboard data could not load.</span></div>`;
+    stageEventsNode.innerHTML = `<div class="event-row"><span>Dashboard data could not load.</span></div>`;
+  }
+}
+
+function getReachedStages(lead) {
+  const reached = new Set(inferredStagePaths[lead.stage] || [lead.stage || "Blank"]);
+  const history = Array.isArray(lead.stageHistory) ? lead.stageHistory : [];
+
+  history.forEach((event) => {
+    const stages = inferredStagePaths[event.stage] || [event.stage];
+    stages.forEach((stage) => {
+      if (stage) reached.add(stage);
+    });
+  });
+
+  return [...reached];
+}
+
+function countDashboardReachedStages(leadsInRange, eventsInRange) {
+  const stagesByLead = new Map();
+
+  leadsInRange.forEach((lead) => {
+    stagesByLead.set(lead.id, new Set(getReachedStages(lead)));
+  });
+
+  eventsInRange.forEach((event) => {
+    const leadKey = event.leadId || `${event.leadName || "lead"}-${event.createdAt || event.date || ""}`;
+    const stages = stagesByLead.get(leadKey) || new Set();
+    (inferredStagePaths[event.stage] || [event.stage]).forEach((stage) => {
+      if (stage) stages.add(stage);
+    });
+    stagesByLead.set(leadKey, stages);
+  });
+
+  return [...stagesByLead.values()].reduce((counts, stages) => {
+    stages.forEach((stage) => {
+      counts[stage] = (counts[stage] || 0) + 1;
+    });
+    return counts;
+  }, {});
 }
 
 function countBy(items, field) {
@@ -383,8 +524,12 @@ function countBy(items, field) {
   }, {});
 }
 
-function renderBreakdown(counts) {
-  const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+function renderBreakdown(counts, order = []) {
+  const orderedEntries = order.filter((label) => counts[label]).map((label) => [label, counts[label]]);
+  const remainingEntries = Object.entries(counts)
+    .filter(([label]) => !order.includes(label))
+    .sort((a, b) => b[1] - a[1]);
+  const entries = [...orderedEntries, ...remainingEntries];
   if (!entries.length) return `<div class="breakdown-row"><span>No data yet.</span></div>`;
   return entries.map(([label, count]) => `<div class="breakdown-row"><span>${escapeHtml(label)}</span><strong>${count}</strong></div>`).join("");
 }
@@ -414,6 +559,15 @@ async function saveField(leadId, field, value) {
   });
 }
 
+async function deleteLead(leadId) {
+  const lead = leads.find((item) => item.id === leadId);
+  const leadName = lead?.name || "this lead";
+  const confirmed = window.confirm(`Delete ${leadName}? This cannot be undone.`);
+  if (!confirmed) return;
+
+  await deleteDoc(doc(leadsCollection, leadId));
+}
+
 async function saveStageChange(lead, nextStage) {
   const history = Array.isArray(lead.stageHistory) ? [...lead.stageHistory] : [];
   const event = {
@@ -433,6 +587,23 @@ async function saveStageChange(lead, nextStage) {
     stage: nextStage,
     stageHistory: history,
     closedAmount: nextStage === "Closed" ? event.amount : lead.closedAmount || 0,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+async function uploadLeadAttachment(leadId, file) {
+  if (!(file instanceof File) || file.size === 0) return;
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const path = `${auth.currentUser.uid}/lead-attachments/${leadId}/${Date.now()}-${safeName}`;
+  const fileRef = ref(storage, path);
+  await uploadBytes(fileRef, file);
+  const attachmentUrl = await getDownloadURL(fileRef);
+
+  await updateDoc(doc(leadsCollection, leadId), {
+    attachmentName: file.name,
+    attachmentPath: path,
+    attachmentUrl,
     updatedAt: serverTimestamp(),
   });
 }
@@ -466,19 +637,181 @@ async function addLead(formData) {
 
   const file = formData.get("attachment");
   if (file instanceof File && file.size > 0) {
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const path = `${auth.currentUser.uid}/lead-attachments/${leadRef.id}/${Date.now()}-${safeName}`;
-    const fileRef = ref(storage, path);
-    await uploadBytes(fileRef, file);
-    const attachmentUrl = await getDownloadURL(fileRef);
+    await uploadLeadAttachment(leadRef.id, file);
+  }
+}
 
-    await updateDoc(leadRef, {
-      attachmentName: file.name,
-      attachmentPath: path,
-      attachmentUrl,
+function setImportStatus(message, type = "") {
+  importStatus.textContent = message;
+  importStatus.dataset.status = type;
+}
+
+function normalizeImportText(value) {
+  return String(value ?? "").trim();
+}
+
+function normalizeImportKey(value) {
+  return normalizeImportText(value).toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizeDropdownValue(value, options) {
+  const text = normalizeImportText(value);
+  if (!text) return "";
+  const match = options.find((option) => option.toLowerCase() === text.toLowerCase());
+  return match || text;
+}
+
+function excelSerialToISO(value) {
+  const serial = Number(value);
+  if (!Number.isFinite(serial) || serial < 20000) return "";
+  const date = new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86400000);
+  return date.toISOString().slice(0, 10);
+}
+
+function dateToISO(value) {
+  if (!value) return "";
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+
+  const text = normalizeImportText(value);
+  if (!text) return "";
+  const serialDate = excelSerialToISO(text);
+  if (serialDate) return serialDate;
+
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function addDaysISO(baseISO, days) {
+  const base = toDate(`${baseISO || todayISO()}T00:00:00`) || new Date();
+  base.setDate(base.getDate() + days);
+  return base.toISOString().slice(0, 10);
+}
+
+function relativeFollowUpToISO(value, baseISO) {
+  const text = normalizeImportText(value).toLowerCase();
+  if (!text) return "";
+  if (text === "today") return baseISO || todayISO();
+  if (text === "tomorrow") return addDaysISO(baseISO, 1);
+  if (text === "3 days from now") return addDaysISO(baseISO, 3);
+  if (text === "1 week") return addDaysISO(baseISO, 7);
+  if (text === "1 month") return addDaysISO(baseISO, 30);
+  return dateToISO(value);
+}
+
+function rowsToObjects(rows) {
+  const [headers = [], ...dataRows] = rows;
+  return dataRows.map((row) =>
+    headers.reduce((record, header, index) => {
+      if (header) record[header] = row[index] ?? "";
+      return record;
+    }, {}),
+  );
+}
+
+async function readSheetObjects(file, sheetName, required = false) {
+  try {
+    const rows = await readXlsxFile(file, { sheet: sheetName });
+    return rowsToObjects(rows);
+  } catch (error) {
+    if (required) throw error;
+    return [];
+  }
+}
+
+function getImportDuplicateKey(lead) {
+  return [lead.name, lead.phone, lead.email].map(normalizeImportKey).join("|");
+}
+
+function buildNotesByLeadName(rows) {
+  return rows.reduce((notes, row) => {
+    const name = normalizeImportKey(row["Lead Name"]);
+    const note = normalizeImportText(row["Notes:"]);
+    if (name && note) notes.set(name, note);
+    return notes;
+  }, new Map());
+}
+
+function mapSpreadsheetLead(row, notesByLeadName) {
+  const name = normalizeImportText(row["Lead Name"]);
+  const lastTouch = dateToISO(row["Last Touch"]);
+  const dueDate = dateToISO(row["Due Date Helper"]);
+  const nextFollowUpDate = dueDate || relativeFollowUpToISO(row["Next Follow-Up Date"], lastTouch);
+  const stage = normalizeDropdownValue(row.Stage, dropdowns.stages) || "Not Contacted Yet";
+  const note = notesByLeadName.get(normalizeImportKey(name)) || "";
+
+  return {
+    name,
+    phone: normalizeImportText(row.Phone),
+    email: normalizeImportText(row.Email),
+    source: normalizeDropdownValue(row.Source, dropdowns.sources),
+    stage,
+    owner: normalizeDropdownValue(row.Owner, dropdowns.owners) || "Unassigned",
+    pain: normalizeDropdownValue(row.Pain, dropdowns.pains),
+    spaceNeeded: normalizeDropdownValue(row["Space Needed"], dropdowns.spaces),
+    deadline: dateToISO(row["Their Deadline"]),
+    decisionMaker: normalizeDropdownValue(row["Decision Maker"], dropdowns.decisionMakers),
+    budget: normalizeDropdownValue(row.Budget, dropdowns.budgets),
+    city: normalizeDropdownValue(row.City, dropdowns.cities),
+    lastTouch,
+    nextFollowUpDate,
+    lostReason: normalizeDropdownValue(row["(If They Said No) Why Did They Not Buy?"], dropdowns.lostReasons),
+    notes: note,
+    stageHistory: [
+      {
+        stage,
+        date: lastTouch || todayISO(),
+        createdAt: new Date().toISOString(),
+        imported: true,
+      },
+    ],
+    closedAmount: 0,
+  };
+}
+
+async function importLeadSpreadsheet(file) {
+  if (!leadsCollection) {
+    throw new Error("Leads collection is not ready.");
+  }
+
+  setImportStatus("Importing spreadsheet...", "info");
+  importLeadsButton.disabled = true;
+
+  const rows = await readSheetObjects(file, "Leads", true);
+  if (!rows.length) {
+    throw new Error("No Leads sheet found.");
+  }
+
+  const followUpRows = await readSheetObjects(file, "Follow-Up Queue");
+  const notesByLeadName = buildNotesByLeadName(followUpRows);
+  const existingKeys = new Set(leads.map(getImportDuplicateKey));
+  const importedAt = new Date().toISOString();
+  let importedCount = 0;
+  let skippedCount = 0;
+
+  for (const row of rows) {
+    const lead = mapSpreadsheetLead(row, notesByLeadName);
+    const duplicateKey = getImportDuplicateKey(lead);
+    if (!lead.name || existingKeys.has(duplicateKey)) {
+      skippedCount += 1;
+      continue;
+    }
+
+    await addDoc(leadsCollection, {
+      ...lead,
+      importedAt,
+      createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    existingKeys.add(duplicateKey);
+    importedCount += 1;
   }
+
+  setImportStatus(`Imported ${importedCount} leads${skippedCount ? `, skipped ${skippedCount}` : ""}.`, "success");
+  importFileInput.value = "";
+  importLeadsButton.disabled = false;
 }
 
 function setPasswordStatus(message, type = "") {
@@ -583,6 +916,21 @@ function initEvents() {
   });
 
   addLeadButton.addEventListener("click", () => leadDialog.showModal());
+  importLeadsButton.addEventListener("click", () => importFileInput.click());
+
+  importFileInput.addEventListener("change", async () => {
+    const [file] = importFileInput.files || [];
+    if (!file) return;
+
+    try {
+      await importLeadSpreadsheet(file);
+    } catch (error) {
+      console.error(error);
+      importLeadsButton.disabled = false;
+      importFileInput.value = "";
+      setImportStatus("Import failed. Make sure you selected the Lead-To-Booked spreadsheet.", "error");
+    }
+  });
 
   document.querySelectorAll("[data-close-dialog]").forEach((button) => {
     button.addEventListener("click", () => leadDialog.close());
@@ -596,14 +944,45 @@ function initEvents() {
   });
 
   leadRows.addEventListener("change", async (event) => {
+    const attachmentInput = event.target.closest("[data-attachment-upload]");
+    if (attachmentInput) {
+      const row = attachmentInput.closest("[data-lead-id]");
+      const [file] = attachmentInput.files || [];
+      if (!row || !file) return;
+      await uploadLeadAttachment(row.dataset.leadId, file);
+      attachmentInput.value = "";
+      return;
+    }
+
     const field = event.target.dataset.field;
     const row = event.target.closest("[data-lead-id]");
     if (!field || !row) return;
     await saveField(row.dataset.leadId, field, event.target.value);
   });
 
+  leadRows.addEventListener("click", async (event) => {
+    const deleteButton = event.target.closest("[data-delete-lead]");
+    if (!deleteButton) return;
+
+    const row = deleteButton.closest("[data-lead-id]");
+    if (!row) return;
+    await deleteLead(row.dataset.leadId);
+  });
+
+  followupList.addEventListener("change", async (event) => {
+    const field = event.target.dataset.field;
+    const card = event.target.closest("[data-lead-id]");
+    if (!field || !card) return;
+    await saveField(card.dataset.leadId, field, event.target.value);
+  });
+
   searchInput.addEventListener("input", () => {
     searchTerm = searchInput.value.toLowerCase();
+    renderTable();
+  });
+
+  leadSortSelect.addEventListener("change", () => {
+    leadSortMode = leadSortSelect.value;
     renderTable();
   });
 
@@ -618,7 +997,7 @@ function initLeads(user) {
     renderAll();
   }, (error) => {
     console.error(error);
-    leadRows.innerHTML = `<tr><td colspan="18">We could not load leads. Check Firestore rules and make sure Firestore is enabled.</td></tr>`;
+    leadRows.innerHTML = `<tr><td colspan="19">We could not load leads. Check Firestore rules and make sure Firestore is enabled.</td></tr>`;
     followupList.innerHTML = `<div class="queue-card"><div><h3>Follow-ups unavailable</h3><p>Firestore returned an error.</p></div></div>`;
     metricsNode.innerHTML = `<div class="metric-card"><span>Firestore Error</span><strong>Check Rules</strong></div>`;
   });
