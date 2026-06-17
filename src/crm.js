@@ -409,16 +409,23 @@ function renderFollowups() {
             <p>${escapeHtml(lead.owner || "Unassigned")}</p>
           </div>
           <div class="queue-card__status">
+            <p class="followup-step">Follow-up update</p>
             <label class="followup-check">
               <input type="checkbox" data-followup-confirm />
-              <span>Have you followed up yet?</span>
+              <span>Yes, I followed up</span>
             </label>
             <div class="followup-details" data-followup-details hidden>
               <label>
-                When?
-                <input type="date" data-followup-date value="${todayISO()}" />
+                When did you follow up?
+                <input type="date" data-followup-date />
               </label>
-              <button type="button" data-complete-followup>Update Lead Tracker</button>
+              <div class="followup-next-step" data-next-followup-step hidden>
+                <label>
+                  When is the next follow-up?
+                  <input type="date" data-next-followup-date />
+                </label>
+                <button type="button" data-complete-followup>Save Follow-Up</button>
+              </div>
             </div>
           </div>
           <div class="queue-card__meta">
@@ -428,7 +435,7 @@ function renderFollowups() {
           </div>
           <div class="queue-card__notes-panel">
             <p class="queue-card__notes-label">Notes</p>
-            <textarea class="queue-card__notes" data-field="notes" rows="4">${escapeHtml(lead.notes || "")}</textarea>
+            <textarea class="queue-card__notes" data-field="notes" rows="2">${escapeHtml(lead.notes || "")}</textarea>
           </div>
         </article>
       `;
@@ -576,15 +583,20 @@ async function saveField(leadId, field, value) {
   });
 }
 
-async function completeFollowUp(leadId, followupDate) {
+async function completeFollowUp(leadId, followupDate, nextFollowUpDate) {
   if (!followupDate) {
     window.alert("Choose when you followed up before updating the lead.");
     return;
   }
 
+  if (!nextFollowUpDate) {
+    window.alert("Choose the next follow-up date before updating the lead.");
+    return;
+  }
+
   await updateDoc(doc(leadsCollection, leadId), {
     lastTouch: followupDate,
-    nextFollowUpDate: "",
+    nextFollowUpDate,
     updatedAt: serverTimestamp(),
   });
 }
@@ -1036,8 +1048,23 @@ function initEvents() {
     if (followupConfirm) {
       const card = followupConfirm.closest("[data-lead-id]");
       const details = card?.querySelector("[data-followup-details]");
+      const nextStep = card?.querySelector("[data-next-followup-step]");
       if (details) details.hidden = !followupConfirm.checked;
+      if (nextStep) nextStep.hidden = true;
       if (followupConfirm.checked) details?.querySelector("[data-followup-date]")?.focus();
+      return;
+    }
+
+    const followupDateInput = event.target.closest("[data-followup-date]");
+    if (followupDateInput) {
+      const card = followupDateInput.closest("[data-lead-id]");
+      const nextStep = card?.querySelector("[data-next-followup-step]");
+      const nextInput = card?.querySelector("[data-next-followup-date]");
+      if (nextStep) nextStep.hidden = !followupDateInput.value;
+      if (followupDateInput.value && nextInput && !nextInput.value) {
+        nextInput.value = addDaysISO(followupDateInput.value, 2);
+      }
+      if (followupDateInput.value) nextInput?.focus();
       return;
     }
 
@@ -1053,11 +1080,12 @@ function initEvents() {
 
     const card = completeButton.closest("[data-lead-id]");
     const followupDate = card?.querySelector("[data-followup-date]")?.value;
+    const nextFollowUpDate = card?.querySelector("[data-next-followup-date]")?.value;
     if (!card) return;
     completeButton.disabled = true;
 
     try {
-      await completeFollowUp(card.dataset.leadId, followupDate);
+      await completeFollowUp(card.dataset.leadId, followupDate, nextFollowUpDate);
     } finally {
       completeButton.disabled = false;
     }
