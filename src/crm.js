@@ -148,25 +148,52 @@ const inferredStagePaths = {
   Dead: ["Dead"],
 };
 
-function toLocalISODate(date) {
+const businessTimeZone = "America/Chicago";
+const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
+const businessDateFormatter = new Intl.DateTimeFormat("en-US", {
+  timeZone: businessTimeZone,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+function toCalendarISODate(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
+function toBusinessISODate(date = new Date()) {
+  const parts = Object.fromEntries(businessDateFormatter.formatToParts(date).map((part) => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
 function todayISO() {
-  return toLocalISODate(new Date());
+  return toBusinessISODate();
+}
+
+function dateOnlyToDate(value) {
+  if (!dateOnlyPattern.test(String(value || ""))) return null;
+  const [year, month, day] = String(value).split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function toDate(value) {
   if (!value) return null;
   if (typeof value?.toDate === "function") return value.toDate();
-  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return new Date(`${value}T00:00:00`);
+  if (typeof value === "string" && dateOnlyPattern.test(value)) {
+    return dateOnlyToDate(value);
   }
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function dateOnlyValue(value) {
+  if (!value) return "";
+  if (typeof value === "string" && dateOnlyPattern.test(value)) return value;
+  const date = toDate(value);
+  return date ? toBusinessISODate(date) : "";
 }
 
 function formatDate(value) {
@@ -182,33 +209,28 @@ function timestampValue(value) {
 
 function isSaveableDateValue(value) {
   if (!value) return true;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  if (!dateOnlyPattern.test(value)) return false;
   const year = Number(value.slice(0, 4));
   return year >= 2000 && year <= 2100;
 }
 
 function isPastDue(lead) {
-  if (!lead.nextFollowUpDate || inactiveStages.has(lead.stage)) return false;
-  const due = toDate(`${lead.nextFollowUpDate}T00:00:00`);
-  const today = toDate(`${todayISO()}T00:00:00`);
-  return due && today && due < today;
+  if (inactiveStages.has(lead.stage)) return false;
+  const due = dateOnlyValue(lead.nextFollowUpDate);
+  return Boolean(due) && due < todayISO();
 }
 
 function isDue(lead) {
-  if (!lead.nextFollowUpDate || inactiveStages.has(lead.stage)) return false;
-  const due = toDate(`${lead.nextFollowUpDate}T00:00:00`);
-  return Boolean(due);
+  if (inactiveStages.has(lead.stage)) return false;
+  return Boolean(dateOnlyValue(lead.nextFollowUpDate));
 }
 
 function isDueTodayOrTomorrow(lead) {
-  if (!lead.nextFollowUpDate || inactiveStages.has(lead.stage)) return false;
-  const due = toDate(`${lead.nextFollowUpDate}T00:00:00`);
-  const today = toDate(`${todayISO()}T00:00:00`);
-  if (!due || !today) return false;
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  return due >= today && due <= tomorrow;
+  if (inactiveStages.has(lead.stage)) return false;
+  const due = dateOnlyValue(lead.nextFollowUpDate);
+  const today = todayISO();
+  const tomorrow = addDaysISO(today, 1);
+  return Boolean(due) && due >= today && due <= tomorrow;
 }
 
 function isTimelineTrigger(value) {
@@ -217,7 +239,7 @@ function isTimelineTrigger(value) {
   if (["asap", "this week", "this month"].includes(normalized)) return true;
   const date = toDate(`${value}T00:00:00`);
   if (!date) return false;
-  const today = toDate(`${todayISO()}T00:00:00`);
+  const today = dateOnlyToDate(todayISO());
   const pastWindow = new Date(today);
   pastWindow.setDate(today.getDate() - 7);
   const futureWindow = new Date(today);
@@ -751,23 +773,24 @@ function excelSerialToISO(value) {
 function dateToISO(value) {
   if (!value) return "";
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
+    return toCalendarISODate(value);
   }
 
   const text = normalizeImportText(value);
   if (!text) return "";
+  if (dateOnlyPattern.test(text)) return text;
   const serialDate = excelSerialToISO(text);
   if (serialDate) return serialDate;
 
   const parsed = new Date(text);
   if (Number.isNaN(parsed.getTime())) return "";
-  return parsed.toISOString().slice(0, 10);
+  return toCalendarISODate(parsed);
 }
 
 function addDaysISO(baseISO, days) {
-  const base = toDate(`${baseISO || todayISO()}T00:00:00`) || new Date();
+  const base = dateOnlyToDate(baseISO || todayISO()) || toDate(baseISO) || dateOnlyToDate(todayISO()) || new Date();
   base.setDate(base.getDate() + days);
-  return toLocalISODate(base);
+  return toCalendarISODate(base);
 }
 
 function relativeFollowUpToISO(value, baseISO) {
