@@ -229,9 +229,7 @@ function scoreLead(lead) {
 }
 
 function shouldShowInFollowupQueue(lead) {
-  if (!isDue(lead)) return false;
-  const { color } = scoreLead(lead);
-  return color === "red" || color === "yellow" || isDueTodayOrTomorrow(lead);
+  return isDue(lead);
 }
 
 function followupDateClass(lead) {
