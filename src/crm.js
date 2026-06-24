@@ -229,7 +229,7 @@ function scoreLead(lead) {
 }
 
 function shouldShowInFollowupQueue(lead) {
-  return isDue(lead);
+  return isPastDue(lead) || isDueTodayOrTomorrow(lead);
 }
 
 function followupDateClass(lead) {
