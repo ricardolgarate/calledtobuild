@@ -640,21 +640,27 @@ body.is-sidebar-collapsed .sidebar-toggle--floating {
   color: var(--warning);
 }
 
-.score-pill.red,
-.date-pill.overdue {
+.score-pill.red {
   background: var(--danger-bg);
   color: var(--danger);
-}
-
-.date-pill.soon {
-  background: var(--warning-bg);
-  color: var(--warning);
 }
 
 .date-pill {
   background: var(--surface-muted);
   color: var(--soft);
   border: 1px solid var(--border);
+}
+
+.date-pill.overdue {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.date-pill.soon {
+  border-color: var(--warning-bg);
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 
 .queue-list {
