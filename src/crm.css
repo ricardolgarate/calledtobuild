@@ -652,9 +652,9 @@ body.is-sidebar-collapsed .sidebar-toggle--floating {
 }
 
 .date-pill.overdue {
-  border-color: #dc2626;
-  background: #dc2626;
-  color: #ffffff;
+  border-color: var(--danger-bg);
+  background: var(--danger-bg);
+  color: var(--danger);
 }
 
 .date-pill.soon {

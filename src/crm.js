@@ -148,8 +148,15 @@ const inferredStagePaths = {
   Dead: ["Dead"],
 };
 
+function toLocalISODate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return toLocalISODate(new Date());
 }
 
 function toDate(value) {
@@ -757,7 +764,7 @@ function dateToISO(value) {
 function addDaysISO(baseISO, days) {
   const base = toDate(`${baseISO || todayISO()}T00:00:00`) || new Date();
   base.setDate(base.getDate() + days);
-  return base.toISOString().slice(0, 10);
+  return toLocalISODate(base);
 }
 
 function relativeFollowUpToISO(value, baseISO) {
