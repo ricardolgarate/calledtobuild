@@ -170,6 +170,13 @@ function timestampValue(value) {
   return date ? date.getTime() : 0;
 }
 
+function isSaveableDateValue(value) {
+  if (!value) return true;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const year = Number(value.slice(0, 4));
+  return year >= 2000 && year <= 2100;
+}
+
 function isPastDue(lead) {
   if (!lead.nextFollowUpDate || inactiveStages.has(lead.stage)) return false;
   const due = toDate(`${lead.nextFollowUpDate}T00:00:00`);
@@ -362,7 +369,7 @@ function renderEditableCellInner(lead, field) {
   }
 
   if (dateFields.has(field)) {
-    return `<input data-field="${field}" type="date" value="${escapeHtml(value)}" />`;
+    return `<input data-field="${field}" type="date" min="2000-01-01" max="2100-12-31" value="${escapeHtml(value)}" />`;
   }
 
   if (textareaFields.has(field)) {
@@ -1031,6 +1038,7 @@ function initEvents() {
     const field = event.target.dataset.field;
     const row = event.target.closest("[data-lead-id]");
     if (!field || !row) return;
+    if (dateFields.has(field) && !isSaveableDateValue(event.target.value)) return;
     await saveField(row.dataset.leadId, field, event.target.value);
   });
 

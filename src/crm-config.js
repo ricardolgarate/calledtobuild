@@ -167,7 +167,7 @@ export const bigSpaceTriggers = new Set([
 
 export const authorityTriggers = new Set(["Self", "Both Involved", "Final Decision Maker"]);
 export const budgetTriggers = new Set(["Comfortable", "Comfortable / Done-For-You", "Wants Done-For-You"]);
-export const inactiveStages = new Set(["Closed", "Dead", "Lost"]);
+export const inactiveStages = new Set(["Closed", "Dead", "Lost", "No for Now"]);
 export const lostStages = new Set(["Dead", "Lost"]);
 
 export const tableFields = [
