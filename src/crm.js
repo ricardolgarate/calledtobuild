@@ -190,6 +190,17 @@ function isDue(lead) {
   return Boolean(due);
 }
 
+function isDueTodayOrTomorrow(lead) {
+  if (!lead.nextFollowUpDate || inactiveStages.has(lead.stage)) return false;
+  const due = toDate(`${lead.nextFollowUpDate}T00:00:00`);
+  const today = toDate(`${todayISO()}T00:00:00`);
+  if (!due || !today) return false;
+
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  return due >= today && due <= tomorrow;
+}
+
 function isTimelineTrigger(value) {
   if (!value) return false;
   const normalized = String(value).toLowerCase();
@@ -215,6 +226,18 @@ function scoreLead(lead) {
   if (score >= 4) return { score, label: `Green (${score}/5)`, color: "green" };
   if (score >= 2) return { score, label: `Yellow (${score}/5)`, color: "yellow" };
   return { score, label: `Red (${score}/5)`, color: "red" };
+}
+
+function shouldShowInFollowupQueue(lead) {
+  if (!isDue(lead)) return false;
+  const { color } = scoreLead(lead);
+  return color === "red" || color === "yellow" || isDueTodayOrTomorrow(lead);
+}
+
+function followupDateClass(lead) {
+  if (isPastDue(lead)) return "overdue";
+  if (isDueTodayOrTomorrow(lead)) return "soon";
+  return "";
 }
 
 function optionMarkup(options, selected = "") {
@@ -398,7 +421,7 @@ function renderAttachment(lead) {
 
 function renderFollowups() {
   const queue = leads
-    .filter(isDue)
+    .filter(shouldShowInFollowupQueue)
     .sort((a, b) => String(a.nextFollowUpDate).localeCompare(String(b.nextFollowUpDate)));
 
   if (!queue.length) {
@@ -438,7 +461,7 @@ function renderFollowups() {
           <div class="queue-card__meta">
             <span class="stage-pill">${escapeHtml(lead.stage || "")}</span>
             <span class="score-pill ${score.color}">${score.label}</span>
-            <span class="date-pill ${isPastDue(lead) ? "overdue" : ""}">${formatDate(lead.nextFollowUpDate)}</span>
+            <span class="date-pill ${followupDateClass(lead)}">${formatDate(lead.nextFollowUpDate)}</span>
           </div>
           <div class="queue-card__notes-panel">
             <p class="queue-card__notes-label">Notes</p>
@@ -465,7 +488,7 @@ function renderDashboard() {
     const reachedStageCounts = countDashboardReachedStages(leadsInRange, eventsInRange);
     const closeEvents = leads.flatMap(getCountedCloseEvents).filter((event) => eventDateInRange(event.date, range));
     const closedRevenue = closeEvents.reduce((total, event) => total + Number(event.amount || 0), 0);
-    const dueCount = leads.filter((lead) => isDue(lead) && (isPastDue(lead) || lead.nextFollowUpDate === todayISO())).length;
+    const dueCount = leads.filter(shouldShowInFollowupQueue).length;
     const greenCount = leadsInRange.filter((lead) => scoreLead(lead).color === "green").length;
     const bookedCount = reachedStageCounts["Booked Consult"] || 0;
     const showedCount = reachedStageCounts["Showed to Consult"] || 0;
