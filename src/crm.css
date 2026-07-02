@@ -686,6 +686,13 @@ body.is-sidebar-collapsed .sidebar-toggle--floating {
   box-shadow: var(--shadow-sm);
 }
 
+.queue-card--empty {
+  grid-template-columns: 1fr;
+  text-align: center;
+  justify-items: center;
+  padding: 28px 18px;
+}
+
 .queue-card h3 {
   margin: 0 0 4px;
   font-size: 15px;

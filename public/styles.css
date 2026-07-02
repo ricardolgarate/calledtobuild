@@ -244,6 +244,14 @@ body {
   font-weight: 700;
 }
 
+.conversion__note {
+  margin: 16px 0 0 !important;
+  color: #64748b;
+  font-size: 14px !important;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+}
+
 .button {
   display: inline-flex;
   min-width: 390px;

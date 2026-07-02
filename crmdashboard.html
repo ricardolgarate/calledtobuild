@@ -120,7 +120,7 @@
             <div class="panel__header">
               <div>
                 <h2>Follow Up Queue</h2>
-                <p>Date-driven queue sorted by the next follow-up date. Past-due dates are red.</p>
+                <p>Leads that need attention now: past due (red) or due today/tomorrow (yellow).</p>
               </div>
             </div>
             <div class="queue-list" data-followup-list></div>
@@ -183,16 +183,16 @@
           <label>Phone<input name="phone" /></label>
           <label>Email<input name="email" type="email" /></label>
           <label>Source<select name="source" data-options="sources"></select></label>
-          <label>Stage<select name="stage" data-options="stages"></select></label>
-          <label>Owner<select name="owner" data-options="owners"></select></label>
+          <label>Stage<select name="stage" data-options="stages" data-default="Not Contacted Yet"></select></label>
+          <label>Owner<select name="owner" data-options="owners" data-default="Unassigned"></select></label>
           <label>Pain<select name="pain" data-options="pains"></select></label>
           <label>Space Needed<select name="spaceNeeded" data-options="spaces"></select></label>
-          <label>Their Deadline<input name="deadline" type="date" /></label>
+          <label>Their Deadline<input name="deadline" type="date" min="2000-01-01" max="2100-12-31" /></label>
           <label>Decision Maker<select name="decisionMaker" data-options="decisionMakers"></select></label>
           <label>Budget<select name="budget" data-options="budgets"></select></label>
           <label>City<select name="city" data-options="cities"></select></label>
-          <label>Last Touch<input name="lastTouch" type="date" /></label>
-          <label>Next Follow-Up<input name="nextFollowUpDate" type="date" /></label>
+          <label>Last Touch<input name="lastTouch" type="date" min="2000-01-01" max="2100-12-31" /></label>
+          <label>Next Follow-Up<input name="nextFollowUpDate" type="date" min="2000-01-01" max="2100-12-31" /></label>
           <label>Lost Reason<select name="lostReason" data-options="lostReasons"></select></label>
           <label>Attachment<input name="attachment" type="file" /></label>
           <label class="lead-form__wide">Notes<textarea name="notes" rows="3"></textarea></label>

@@ -220,11 +220,6 @@ function isPastDue(lead) {
   return Boolean(due) && due < todayISO();
 }
 
-function isDue(lead) {
-  if (inactiveStages.has(lead.stage)) return false;
-  return Boolean(dateOnlyValue(lead.nextFollowUpDate));
-}
-
 function isDueTodayOrTomorrow(lead) {
   if (inactiveStages.has(lead.stage)) return false;
   const due = dateOnlyValue(lead.nextFollowUpDate);
@@ -313,7 +308,7 @@ function eventDateInRange(value, range) {
   if (range === "all") return true;
   const date = toDate(`${value}T00:00:00`) || toDate(value);
   if (!date) return false;
-  const now = new Date();
+  const now = dateOnlyToDate(todayISO());
   if (range === "week") {
     const start = new Date(now);
     start.setDate(now.getDate() - now.getDay());
@@ -351,7 +346,7 @@ function getCountedCloseEvents(lead) {
 
 function fillDialogOptions() {
   document.querySelectorAll("[data-options]").forEach((select) => {
-    select.innerHTML = optionMarkup(dropdowns[select.dataset.options] || []);
+    select.innerHTML = optionMarkup(dropdowns[select.dataset.options] || [], select.dataset.default || "");
   });
 }
 
@@ -455,7 +450,7 @@ function renderFollowups() {
     .sort((a, b) => String(a.nextFollowUpDate).localeCompare(String(b.nextFollowUpDate)));
 
   if (!queue.length) {
-    followupList.innerHTML = `<div class="queue-card"><div><h3>No follow-ups due</h3><p>Add a follow-up date on a lead to populate this queue.</p></div></div>`;
+    followupList.innerHTML = `<div class="queue-card queue-card--empty"><div><h3>You're all caught up</h3><p>Leads appear here when their next follow-up is past due, today, or tomorrow.</p></div></div>`;
     return;
   }
 
@@ -477,12 +472,12 @@ function renderFollowups() {
             <div class="followup-details" data-followup-details hidden>
               <label>
                 When did you follow up?
-                <input type="date" data-followup-date />
+                <input type="date" data-followup-date min="2000-01-01" max="2100-12-31" />
               </label>
               <div class="followup-next-step" data-next-followup-step hidden>
                 <label>
                   When is the next follow-up?
-                  <input type="date" data-next-followup-date />
+                  <input type="date" data-next-followup-date min="2000-01-01" max="2100-12-31" />
                 </label>
                 <button type="button" data-complete-followup>Save Follow-Up</button>
               </div>
@@ -528,10 +523,10 @@ function renderDashboard() {
       ["Green Leads", greenCount],
       ["Booked Consults", bookedCount],
       ["Showed", showedCount],
-      ["Counted Closes", closeEvents.length],
+      ["Projects Closed", closeEvents.length],
       ["Close Rate", showedCount ? `${Math.round((closeEvents.length / showedCount) * 100)}%` : "0%"],
       ["Closed Revenue", formatMoney(closedRevenue)],
-      ["AOV", closeEvents.length ? formatMoney(closedRevenue / closeEvents.length) : "$0"],
+      ["Avg Project Value", closeEvents.length ? formatMoney(closedRevenue / closeEvents.length) : "$0"],
       ["Follow-Ups Due", dueCount],
     ];
 
@@ -644,12 +639,12 @@ async function saveField(leadId, field, value) {
 }
 
 async function completeFollowUp(leadId, followupDate, nextFollowUpDate) {
-  if (!followupDate) {
+  if (!followupDate || !isSaveableDateValue(followupDate)) {
     window.alert("Choose when you followed up before updating the lead.");
     return;
   }
 
-  if (!nextFollowUpDate) {
+  if (!nextFollowUpDate || !isSaveableDateValue(nextFollowUpDate)) {
     window.alert("Choose the next follow-up date before updating the lead.");
     return;
   }
