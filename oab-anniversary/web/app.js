@@ -171,7 +171,8 @@ createButton.addEventListener('click',()=>{
   sharing=true;createButton.disabled=true;
   try{
     const {name,code}=selectedClient;
-    const url=new URL('/',window.location.origin);url.searchParams.set('code',code);
+    const url = new URL('https://anniversary.organizedandbeautiful.com/');
+    url.searchParams.set('code', code);
     const message=`Hi! Organized & Beautiful helped with my home, and I thought of you. For their 3rd birthday, you can get a FREE in-person visit and $150 off home organizing if you book. Donation drop-off and product ordering are included with the job; you pay for the products you choose.\n\nUse my referral code: ${code}\nFrom: ${name}\nClaim your offer here: ${url.href}\n\nI earn a $150 Amazon gift card or $150 off my next service after 3 people I send each complete a free visit. The visits must be scheduled by December 31, 2026. No paid job is needed for the visit to count.`;
     $('#gift-url').value=url.href;$('#gift-message').value=message;$('#share-sms').href=smsUrl('',message);
     $('#share-result').hidden=false;$('#share-setup').hidden=true;statusLinks();$('#share-sms').focus();
