@@ -1,5 +1,19 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/referral",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/referral/index",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/login",
