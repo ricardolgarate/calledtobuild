@@ -1,0 +1,8 @@
+dist/
+site.tar.gz
+.env*
+.dev.vars*
+.sites-runtime/
+.wrangler/
+outputs/
+.DS_Store
