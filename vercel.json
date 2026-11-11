@@ -9,6 +9,11 @@
       "permanent": true
     },
     {
+      "source": "/referral/",
+      "destination": "/",
+      "permanent": true
+    },
+    {
       "source": "/referral/index",
       "destination": "/",
       "permanent": true
