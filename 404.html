@@ -1,49 +1,47 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page Not Found | Called To Build</title>
-    <link rel="icon" href="./public/favicon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="./public/apple-touch-icon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./src/not-found.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#173f43">
+    <meta name="robots" content="noindex">
+    <title>Page Not Found | Organized &amp; Beautiful</title>
+    <link rel="icon" href="/oab-anniversary/web/assets/logo.webp">
+    <link rel="stylesheet" href="/oab-anniversary/web/referral/referral.css">
+    <link rel="stylesheet" href="/src/not-found.css">
   </head>
   <body>
-    <main class="not-found-page">
-      <header class="site-header" aria-label="Challenge audience">
-        <p class="eyebrow">
-          <span class="eyebrow__dot" aria-hidden="true"></span>
-          Christian Decluttering Business Owners
-        </p>
-      </header>
-
-      <section class="not-found" aria-labelledby="not-found-title">
-        <div class="error-art" aria-hidden="true">
-          <span>4</span>
-          <span class="error-art__zero">
-            <span>?</span>
-          </span>
-          <span>4</span>
-        </div>
-
-        <p class="banner">That page doesn't exist</p>
-        <h1 id="not-found-title">Let's get you back on track.</h1>
-        <p class="not-found__copy">
-          You didn't break the internet, but we couldn't find what you're looking for.
-          Head home or apply for the 90-Day Decluttering Scaling Challenge.
-        </p>
-
+    <div class="birthday-bar">OAB’S 3RD BIRTHDAY</div>
+    <header class="page-header shell">
+      <a href="/" aria-label="Organized and Beautiful referral homepage">
+        <img src="/oab-anniversary/web/assets/logo.webp" alt="Organized and Beautiful Co." width="640" height="212">
+      </a>
+      <span>Home organizing<br><strong>Dallas–Fort Worth</strong></span>
+    </header>
+    <main class="hero shell not-found">
+      <div>
+        <p class="eyebrow">Page not found</p>
+        <h1>We couldn’t find<br><span>that page.</span></h1>
+        <p class="intro">If a friend sent you here, you can still use their referral code on the offer page.</p>
         <div class="not-found__actions">
-          <a class="button button--primary" href="/">Back To Home</a>
-          <a class="button button--secondary" href="/signup">Apply For The Challenge</a>
+          <a class="button" id="referral-offer" href="/">See the $150 referral offer <span aria-hidden="true">↗</span></a>
+          <a class="not-found__secondary" href="/pastcustomers">I’m a past client <span aria-hidden="true">→</span></a>
         </div>
-      </section>
+      </div>
+      <figure class="not-found__photo">
+        <img src="/oab-anniversary/web/assets/project-2.jpg" alt="An OAB client’s closet after organizing, with a clear bench and labeled bins" width="800" height="1067">
+      </figure>
     </main>
+    <footer class="page-footer shell not-found__footer">
+      <p>Organized &amp; Beautiful Co., LLC</p>
+    </footer>
+    <script type="module">
+      const code = new URLSearchParams(window.location.search).get("code")?.trim();
+      if (code) {
+        const offer = new URL("/", window.location.origin);
+        offer.searchParams.set("code", code.slice(0, 80));
+        document.querySelector("#referral-offer").href = offer.href;
+      }
+    </script>
   </body>
 </html>

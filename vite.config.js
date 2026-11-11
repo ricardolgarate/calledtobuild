@@ -1,5 +1,6 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { extname, resolve, sep } from "node:path";
 import { defineConfig } from "vite";
 import { anniversaryApiMiddleware } from "./server/anniversary-api.js";
 
@@ -31,9 +32,46 @@ function anniversaryPageMiddleware(request, response, next) {
   next();
 }
 
-function registerAnniversaryMiddleware({ middlewares }) {
+function notFoundPageMiddleware(server) {
+  const isDev = typeof server.transformIndexHtml === "function";
+  const root = isDev ? server.config.root : resolve(server.config.root, server.config.build.outDir);
+
+  return async (request, response, next) => {
+    const accept = request.headers.accept || "*/*";
+    if (request.method !== "GET" && request.method !== "HEAD") return next();
+    if (!accept.includes("text/html") && !accept.includes("*/*")) return next();
+
+    let pathname;
+    try {
+      pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
+    } catch {
+      return next();
+    }
+    if (pathname === "/api" || pathname.startsWith("/api/")) return next();
+
+    const extension = extname(pathname);
+    if (extension && extension !== ".html" && !accept.includes("text/html")) return next();
+    const requestedPage = resolve(root, `.${pathname}`);
+    if (extension === ".html" && requestedPage.startsWith(root + sep) && existsSync(requestedPage)) {
+      return next();
+    }
+
+    try {
+      const source = await readFile(resolve(root, "404.html"), "utf8");
+      const html = isDev ? await server.transformIndexHtml("/404.html", source) : source;
+      response.writeHead(404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+      response.end(request.method === "HEAD" ? undefined : html);
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+function registerAnniversaryMiddleware(server) {
+  const { middlewares } = server;
   middlewares.use(anniversaryPageMiddleware);
   middlewares.use(anniversaryApiMiddleware);
+  return () => middlewares.use(notFoundPageMiddleware(server));
 }
 
 const anniversaryPlugin = {
@@ -55,6 +93,7 @@ const anniversaryPlugin = {
 };
 
 export default defineConfig({
+  appType: "mpa",
   plugins: [anniversaryPlugin],
   build: {
     rollupOptions: {
