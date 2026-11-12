@@ -11,7 +11,7 @@ The intended custom addresses are `https://anniversary.organizedandbeautiful.com
 
 Past clients type at least three letters of their name and select their entry. The server resolves the exact issued referral code from the supplied workbook and fills a read-only code field automatically. No manual code entry is required. Name edits clear the prior selection and code. The ready-made text includes the sender’s name, code, and the referral page URL at the root. New share links always use `https://anniversary.organizedandbeautiful.com/?code=ISSUED_CODE`, including when the past-client page is opened in a preview or on another hostname. Existing `/referral`, `/referral/`, and `/referral/index.html` links permanently redirect to `/` with all query parameters, including the issued code, preserved. Existing root `?ref=Name` links now directly show the referred-friend page; the friend must enter the issued code. `/pastcustomers/` redirects to `/pastcustomers` without losing query parameters.
 
-The workbook has 14 usable issued codes and one incomplete client row without a phone/code. Its issued values are preserved rather than regenerated from an ambiguous first-name formula. The private directory is stored as a Sites runtime secret and is excluded from public assets and source. New issued codes must be added to that server-side directory; the local workbook is not polled automatically.
+The workbook has 16 usable issued codes and one incomplete client row without a phone/code. Its issued values are preserved rather than regenerated from an ambiguous first-name formula. The private directory is stored as a Sites runtime secret and is excluded from public assets and source. New issued codes must be added to that server-side directory; the local workbook is not polled automatically.
 
 ## Four-field claim form
 
@@ -23,7 +23,7 @@ Consultations are not marked complete by a form submission. The team must update
 
 ## Current offer
 
-Past clients choose a $150 Amazon gift card or $150 off their next home organizing service after three referred people each complete a free in-person consultation. All three consultations must be scheduled by December 31, 2026. A paid service booking by the friends is not required for that thank-you. Referred friends/family in DFW get $150 off service when they book. Donation drop-off is included with organizing work; measuring, shopping, and product ordering have no additional fee. Clients pay for their chosen products. The offer has no cash value.
+Past clients choose a $150 Amazon gift card or $150 off their next home organizing order of $1,200 or more after three referred people each complete a free in-person consultation. All three consultations must be scheduled by December 31, 2026. A paid service booking by the friends is not required for that thank-you. Referred friends/family in DFW get $150 off a home organizing order of $1,200 or more. Donation drop-off is included with organizing work; measuring, shopping, and product ordering have no additional fee. Clients pay for their chosen products. The offer has no cash value.
 
 ## Source and deployment
 
